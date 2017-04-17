@@ -235,8 +235,7 @@ void CoinControlDialog::showMenu(const QPoint &point) {
             // transaction hash is 64 characters (this means its a child node,
             // so its not a parent node in tree mode)
             copyTransactionHashAction->setEnabled(true);
-            if (model->isLockedCoin(txid,
-                                    item->text(COLUMN_VOUT_INDEX).toUInt())) {
+            if (model->wallet().isLockedCoin(COutPoint(txid, item->text(COLUMN_VOUT_INDEX).toUInt()))) {
                 lockAction->setEnabled(false);
                 unlockAction->setEnabled(true);
             } else {
@@ -297,7 +296,7 @@ void CoinControlDialog::lockCoin() {
     COutPoint outpt(
         uint256S(contextMenuItem->text(COLUMN_TXHASH).toStdString()),
         contextMenuItem->text(COLUMN_VOUT_INDEX).toUInt());
-    model->lockCoin(outpt);
+    model->wallet().lockCoin(outpt);
     contextMenuItem->setDisabled(true);
     contextMenuItem->setIcon(
         COLUMN_CHECKBOX, platformStyle->SingleColorIcon(":/icons/lock_closed"));
@@ -306,10 +305,8 @@ void CoinControlDialog::lockCoin() {
 
 // context menu action: unlock coin
 void CoinControlDialog::unlockCoin() {
-    COutPoint outpt(
-        uint256S(contextMenuItem->text(COLUMN_TXHASH).toStdString()),
-        contextMenuItem->text(COLUMN_VOUT_INDEX).toUInt());
-    model->unlockCoin(outpt);
+    COutPoint outpt(uint256S(contextMenuItem->text(COLUMN_TXHASH).toStdString()), contextMenuItem->text(COLUMN_VOUT_INDEX).toUInt());
+    model->wallet().unlockCoin(outpt);
     contextMenuItem->setDisabled(false);
     contextMenuItem->setIcon(COLUMN_CHECKBOX, QIcon());
     updateLabelLocked();
@@ -445,7 +442,7 @@ void CoinControlDialog::viewItemChanged(QTreeWidgetItem *item, int column) {
 // shows count of locked unspent outputs
 void CoinControlDialog::updateLabelLocked() {
     std::vector<COutPoint> vOutpts;
-    model->listLockedCoins(vOutpts);
+    model->wallet().listLockedCoins(vOutpts);
     if (vOutpts.size() > 0) {
         ui->labelLocked->setText(tr("(%1 locked)").arg(vOutpts.size()));
         ui->labelLocked->setVisible(true);
@@ -511,7 +508,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog *dialog) {
         if (ExtractDestination(out.tx->tx->vout[out.i].scriptPubKey, address)) {
             CPubKey pubkey;
             CKeyID *keyid = boost::get<CKeyID>(&address);
-            if (keyid && model->getPubKey(*keyid, pubkey)) {
+            if (keyid && model->wallet().getPubKey(*keyid, pubkey)) {
                 nBytesInputs += (pubkey.IsCompressed() ? 148 : 180);
                 if (!pubkey.IsCompressed()) {
                     nQuantityUncompressed++;
@@ -794,7 +791,7 @@ void CoinControlDialog::updateView() {
             itemOutput->setText(COLUMN_VOUT_INDEX, QString::number(out.i));
 
             // disable locked coins
-            if (model->isLockedCoin(txid, out.i)) {
+            if (model->wallet().isLockedCoin(COutPoint(txid, out.i))) {
                 COutPoint outpt(txid, out.i);
                 // just to be sure
                 coinControl()->UnSelect(outpt);

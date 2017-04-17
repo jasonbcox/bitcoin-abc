@@ -142,7 +142,7 @@ void ReceiveCoinsDialog::on_receiveButton_clicked() {
         /* Choose existing receiving address */
         AddressBookPage dlg(platformStyle, AddressBookPage::ForSelection,
                             AddressBookPage::ReceivingTab, this);
-        dlg.setModel(model->getAddressTableModel());
+        dlg.setModel(model->wallet().getAddressTableModel());
         if (dlg.exec()) {
             address = dlg.getReturnValue();
             // If no label provided, use the previously used label
