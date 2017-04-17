@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "interface/node.h"
 #include "trafficgraphwidget.h"
 #include "clientmodel.h"
 
@@ -26,8 +27,8 @@ TrafficGraphWidget::TrafficGraphWidget(QWidget *parent)
 void TrafficGraphWidget::setClientModel(ClientModel *model) {
     clientModel = model;
     if (model) {
-        nLastBytesIn = model->getTotalBytesRecv();
-        nLastBytesOut = model->getTotalBytesSent();
+        nLastBytesIn = model->node().getTotalBytesRecv();
+        nLastBytesOut = model->node().getTotalBytesSent();
     }
 }
 
@@ -111,12 +112,10 @@ void TrafficGraphWidget::paintEvent(QPaintEvent *) {
 void TrafficGraphWidget::updateRates() {
     if (!clientModel) return;
 
-    quint64 bytesIn = clientModel->getTotalBytesRecv(),
-            bytesOut = clientModel->getTotalBytesSent();
-    float inRate =
-        (bytesIn - nLastBytesIn) / 1024.0f * 1000 / timer->interval();
-    float outRate =
-        (bytesOut - nLastBytesOut) / 1024.0f * 1000 / timer->interval();
+    quint64 bytesIn = clientModel->node().getTotalBytesRecv(),
+            bytesOut = clientModel->node().getTotalBytesSent();
+    float inRate = (bytesIn - nLastBytesIn) / 1024.0f * 1000 / timer->interval();
+    float outRate = (bytesOut - nLastBytesOut) / 1024.0f * 1000 / timer->interval();
     vSamplesIn.push_front(inRate);
     vSamplesOut.push_front(outRate);
     nLastBytesIn = bytesIn;
@@ -157,8 +156,8 @@ void TrafficGraphWidget::clear() {
     fMax = 0.0f;
 
     if (clientModel) {
-        nLastBytesIn = clientModel->getTotalBytesRecv();
-        nLastBytesOut = clientModel->getTotalBytesSent();
+        nLastBytesIn = clientModel->node().getTotalBytesRecv();
+        nLastBytesOut = clientModel->node().getTotalBytesSent();
     }
     timer->start();
 }
