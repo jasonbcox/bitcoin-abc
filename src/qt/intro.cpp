@@ -8,6 +8,7 @@
 
 #include "fs.h"
 #include "guiutil.h"
+#include "interface/node.h"
 #include "intro.h"
 #include "ui_intro.h"
 #include "util.h"
@@ -161,7 +162,7 @@ QString Intro::getDefaultDataDirectory() {
     return GUIUtil::boostPathToQString(GetDefaultDataDir());
 }
 
-bool Intro::pickDataDirectory() {
+bool Intro::pickDataDirectory(interface::Node& node) {
     QSettings settings;
     /* If data directory provided on command line, no need to look at settings
        or show a picking dialog */
@@ -215,7 +216,7 @@ bool Intro::pickDataDirectory() {
      */
     if (dataDir != getDefaultDataDirectory()) {
         // use OS locale for path setting
-        gArgs.SoftSetArg("-datadir",
+        node.softSetArg("-datadir",
                          GUIUtil::qstringToBoostPath(dataDir).string());
     }
     return true;
