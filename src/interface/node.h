@@ -20,6 +20,7 @@
 #include <vector>
 
 class CCoinControl;
+class Coin;
 class Config;
 class CFeeRate;
 struct CNodeStateStats;
@@ -66,6 +67,9 @@ public:
 
     //! Get warnings.
     virtual std::string getWarnings(const std::string &type) = 0;
+
+    // Get log flags.
+    virtual uint32_t getLogCategories() = 0;
 
     //! Initialize app dependencies.
     virtual bool baseInitialize(Config &config, RPCServer &rpcServer) = 0;
@@ -173,6 +177,9 @@ public:
 
     //! Unset RPC timer interface.
     virtual void rpcUnsetTimerInterface(RPCTimerInterface* iface) = 0;
+
+    //! Get unspent outputs associated with a transaction.
+    virtual bool getUnspentOutput(const COutPoint& output, Coin& coin) = 0;
 
     //! Return interfaces for accessing wallets (if any).
     virtual std::vector<std::unique_ptr<Wallet>> getWallets() = 0;

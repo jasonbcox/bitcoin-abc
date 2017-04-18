@@ -115,7 +115,7 @@ class WalletModel : public QObject {
     Q_OBJECT
 
 public:
-    explicit WalletModel(std::unique_ptr<interface::Wallet> wallet, interface::Node& node, const PlatformStyle *platformStyle, CWallet *cwallet, OptionsModel *optionsModel, QObject *parent = nullptr);
+    explicit WalletModel(std::unique_ptr<interface::Wallet> wallet, interface::Node& node, const PlatformStyle *platformStyle, OptionsModel *optionsModel, QObject *parent = nullptr);
     ~WalletModel();
 
     // Returned by sendCoins
@@ -226,7 +226,6 @@ private:
     std::unique_ptr<interface::Handler> m_handler_watch_only_changed;
     interface::Node& m_node;
 
-    CWallet *cwallet;
     bool fHaveWatchOnly;
     bool fForceCheckBalanceChanged;
 
