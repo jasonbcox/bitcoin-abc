@@ -13,6 +13,7 @@
 
 #include "amount.h"
 #include "blockfileinfo.h"
+#include "chain.h"
 #include "coins.h"
 #include "consensus/consensus.h"
 #include "consensus/params.h"
@@ -617,6 +618,12 @@ public:
 
 /** Replay blocks that aren't fully applied to the database. */
 bool ReplayBlocks(const Config &config, CCoinsView *view);
+
+inline CBlockIndex *LookupBlockIndex(const uint256 &hash) {
+    AssertLockHeld(cs_main);
+    BlockMap::const_iterator it = mapBlockIndex.find(hash);
+    return it == mapBlockIndex.end() ? nullptr : it->second;
+}
 
 /** Find the last common block between the parameter chain and a locator. */
 CBlockIndex *FindForkInGlobalIndex(const CChain &chain,
