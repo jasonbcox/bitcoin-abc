@@ -34,6 +34,8 @@
 
 #include "chainparams.h"
 #include "init.h"
+#include "interface/handler.h"
+#include "interface/node.h"
 #include "ui_interface.h"
 #include "util.h"
 
@@ -70,11 +72,11 @@ const std::string BitcoinGUI::DEFAULT_UIPLATFORM =
 #endif
     ;
 
-BitcoinGUI::BitcoinGUI(const Config *configIn,
+BitcoinGUI::BitcoinGUI(interface::Node &node, const Config *configIn,
                        const PlatformStyle *_platformStyle,
                        const NetworkStyle *networkStyle, QWidget *parent)
-    : QMainWindow(parent), enableWallet(false), platformStyle(_platformStyle),
-      config(configIn) {
+    : QMainWindow(parent), enableWallet(false), m_node(node),
+      platformStyle(_platformStyle), config(configIn) {
     QSettings settings;
     if (!restoreGeometry(settings.value("MainWindowGeometry").toByteArray())) {
         // Restore failed (perhaps missing setting), center the window
@@ -100,8 +102,8 @@ BitcoinGUI::BitcoinGUI(const Config *configIn,
 #endif
     setWindowTitle(windowTitle);
 
-    rpcConsole = new RPCConsole(_platformStyle, 0);
-    helpMessageDialog = new HelpMessageDialog(this, false);
+    rpcConsole = new RPCConsole(node, _platformStyle, 0);
+    helpMessageDialog = new HelpMessageDialog(node, this, false);
 #ifdef ENABLE_WALLET
     if (enableWallet) {
         /** Create wallet frame and make it the central widget */
@@ -524,9 +526,9 @@ void BitcoinGUI::setClientModel(ClientModel *_clientModel) {
         modalOverlay->setKnownBestHeight(
             _clientModel->getHeaderTipHeight(),
             QDateTime::fromTime_t(_clientModel->getHeaderTipTime()));
-        setNumBlocks(_clientModel->getNumBlocks(),
-                     _clientModel->getLastBlockDate(),
-                     _clientModel->getVerificationProgress(nullptr), false);
+        setNumBlocks(m_node.getNumBlocks(),
+                     QDateTime::fromTime_t(m_node.getLastBlockTime()),
+                     m_node.getVerificationProgress(), false);
         connect(_clientModel,
                 SIGNAL(numBlocksChanged(int, QDateTime, double, bool)), this,
                 SLOT(setNumBlocks(int, QDateTime, double, bool)));
@@ -690,7 +692,7 @@ void BitcoinGUI::optionsClicked() {
 void BitcoinGUI::aboutClicked() {
     if (!clientModel) return;
 
-    HelpMessageDialog dlg(this, true);
+    HelpMessageDialog dlg(m_node, this, true);
     dlg.exec();
 }
 
@@ -776,7 +778,7 @@ void BitcoinGUI::updateNetworkState() {
 
     QString tooltip;
 
-    if (clientModel->getNetworkActive()) {
+    if (m_node.getNetworkActive()) {
         tooltip = tr("%n active connection(s) to Bitcoin network", "", count) +
                   QString(".<br>") + tr("Click to disable network activity.");
     } else {
@@ -1042,7 +1044,7 @@ void BitcoinGUI::incomingTransaction(const QString &date, int unit,
     QString msg = tr("Date: %1\n").arg(date) +
                   tr("Amount: %1\n")
                       .arg(BitcoinUnits::formatWithUnit(unit, amount, true));
-    if (WalletModel::isMultiwallet() && !walletName.isEmpty()) {
+    if (m_node.getWallets().size() > 1 && !walletName.isEmpty()) {
         msg += tr("Wallet: %1\n").arg(walletName);
     }
     msg += tr("Type: %1\n").arg(type);
@@ -1155,7 +1157,7 @@ void BitcoinGUI::updateWalletStatus() {
     }
     WalletModel *const walletModel = walletView->getWalletModel();
     setEncryptionStatus(walletModel->getEncryptionStatus());
-    setHDStatus(walletModel->hdEnabled());
+    setHDStatus(walletModel->wallet().hdEnabled());
 }
 #endif // ENABLE_WALLET
 
@@ -1184,7 +1186,7 @@ void BitcoinGUI::toggleHidden() {
 }
 
 void BitcoinGUI::detectShutdown() {
-    if (ShutdownRequested()) {
+    if (m_node.shutdownRequested()) {
         if (rpcConsole) {
             rpcConsole->hide();
         }
@@ -1244,24 +1246,18 @@ static bool ThreadSafeMessageBox(BitcoinGUI *gui, const std::string &message,
 
 void BitcoinGUI::subscribeToCoreSignals() {
     // Connect signals to client
-    uiInterface.ThreadSafeMessageBox.connect(
-        boost::bind(ThreadSafeMessageBox, this, _1, _2, _3));
-    uiInterface.ThreadSafeQuestion.connect(
-        boost::bind(ThreadSafeMessageBox, this, _1, _3, _4));
+    m_handler_message_box = m_node.handleMessageBox(boost::bind(ThreadSafeMessageBox, this, _1, _2, _3));
+    m_handler_question = m_node.handleQuestion(boost::bind(ThreadSafeMessageBox, this, _1, _3, _4));
 }
 
 void BitcoinGUI::unsubscribeFromCoreSignals() {
     // Disconnect signals from client
-    uiInterface.ThreadSafeMessageBox.disconnect(
-        boost::bind(ThreadSafeMessageBox, this, _1, _2, _3));
-    uiInterface.ThreadSafeQuestion.disconnect(
-        boost::bind(ThreadSafeMessageBox, this, _1, _3, _4));
+    m_handler_message_box->disconnect();
+    m_handler_question->disconnect();
 }
 
 void BitcoinGUI::toggleNetworkActive() {
-    if (clientModel) {
-        clientModel->setNetworkActive(!clientModel->getNetworkActive());
-    }
+    m_node.setNetworkActive(!m_node.getNetworkActive());
 }
 
 UnitDisplayStatusBarControl::UnitDisplayStatusBarControl(

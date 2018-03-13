@@ -8,6 +8,7 @@
 #include "guiconstants.h"
 #include "guiutil.h"
 
+#include "interface/node.h"
 #include "sync.h"
 #include "utiltime.h"
 
@@ -43,9 +44,9 @@ public:
     Qt::SortOrder sortOrder;
 
     /** Pull a full list of banned nodes from CNode into our cache */
-    void refreshBanlist() {
+    void refreshBanlist(interface::Node& node) {
         banmap_t banMap;
-        if (g_connman) g_connman->GetBanned(banMap);
+        node.getBanned(banMap);
 
         cachedBanlist.clear();
         cachedBanlist.reserve(banMap.size());
@@ -72,8 +73,10 @@ public:
     }
 };
 
-BanTableModel::BanTableModel(ClientModel *parent)
-    : QAbstractTableModel(parent), clientModel(parent) {
+BanTableModel::BanTableModel(interface::Node& node, ClientModel *parent) :
+    QAbstractTableModel(parent),
+    m_node(node),
+    clientModel(parent) {
     columns << tr("IP/Netmask") << tr("Banned Until");
     priv.reset(new BanTablePriv());
     // default to unsorted
@@ -144,7 +147,7 @@ QModelIndex BanTableModel::index(int row, int column,
 
 void BanTableModel::refresh() {
     Q_EMIT layoutAboutToBeChanged();
-    priv->refreshBanlist();
+    priv->refreshBanlist(m_node);
     Q_EMIT layoutChanged();
 }
 
