@@ -5,6 +5,7 @@
 #include <interface/wallet.h>
 
 #include <interface/handler.h>
+#include <util.h>
 #include <wallet/wallet.h>
 
 #include <memory>

@@ -134,6 +134,7 @@ add_library(util
 	fs.cpp
 	interface/handler.cpp
 	interface/node.cpp
+	interface/wallet.cpp
 	logging.cpp
 	random.cpp
 	rcu.cpp
