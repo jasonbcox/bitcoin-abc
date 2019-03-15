@@ -6,7 +6,7 @@
 #define BITCOIN_INTERFACE_NODE_H
 
 #include <addrdb.h>     // For banmap_t
-#include <amount.h>     // For CAmount
+#include <amount.h>     // For Amount
 #include <init.h>       // For HelpMessageMode
 #include <net.h>        // For CConnman::NumConnections
 #include <netaddress.h> // For Network
@@ -21,7 +21,7 @@
 
 class Config;
 struct CNodeStateStats;
-class CNodeStats;
+struct CNodeStats;
 class HTTPRPCRequestProcessor;
 class proxyType;
 class RPCServer;
@@ -144,11 +144,8 @@ public:
     //! Get network active.
     virtual bool getNetworkActive() = 0;
 
-    //! Get tx confirm target.
-    virtual unsigned int getTxConfirmTarget() = 0;
-
     //! Get max tx fee.
-    virtual CAmount getMaxTxFee() = 0;
+    virtual Amount getMaxTxFee() = 0;
 
     //! Execute rpc command.
     virtual UniValue executeRpc(const std::string& command, const UniValue& params, const std::string& uri) = 0;

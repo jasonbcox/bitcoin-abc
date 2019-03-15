@@ -15,7 +15,6 @@
 #include <support/allocators/secure.h>
 #include <sync.h>
 #include <ui_interface.h>
-#include <uint256.h>
 #include <util.h>
 #include <validation.h>
 #include <wallet/wallet.h>
@@ -32,7 +31,7 @@ public:
 
     const CTransaction& get() override { return *m_tx; }
 
-    int64_t getVirtualSize() override { return GetVirtualTransactionSize(*m_tx); }
+    int64_t getVirtualSize() override { return m_tx->GetTotalSize(); }
 
     bool commit(WalletValueMap value_map,
         WalletOrderForm order_form,
@@ -123,7 +122,7 @@ public:
     bool isLockedCoin(const COutPoint& output) override
     {
         LOCK2(cs_main, m_wallet.cs_wallet);
-        return m_wallet.IsLockedCoin(output.hash, output.n);
+        return m_wallet.IsLockedCoin(output.GetTxId(), output.GetN());
     }
     void listLockedCoins(std::vector<COutPoint>& outputs) override
     {
@@ -134,7 +133,7 @@ public:
         const CCoinControl& coin_control,
         bool sign,
         int& change_pos,
-        CAmount& fee,
+        Amount& fee,
         std::string& fail_reason) override
     {
         LOCK2(cs_main, m_wallet.cs_wallet);
@@ -145,35 +144,11 @@ public:
         }
         return std::move(pending);
     }
-    bool transactionCanBeAbandoned(const uint256& txid) override { return m_wallet.TransactionCanBeAbandoned(txid); }
-    bool abandonTransaction(const uint256& txid) override
+    bool transactionCanBeAbandoned(const TxId &txid) override { return m_wallet.TransactionCanBeAbandoned(txid); }
+    bool abandonTransaction(const TxId& txid) override
     {
         LOCK2(cs_main, m_wallet.cs_wallet);
         return m_wallet.AbandonTransaction(txid);
-    }
-    bool transactionCanBeBumped(const uint256& txid) override
-    {
-        return feebumper::TransactionCanBeBumped(&m_wallet, txid);
-    }
-    bool createBumpTransaction(const uint256& txid,
-        const CCoinControl& coin_control,
-        CAmount total_fee,
-        std::vector<std::string>& errors,
-        CAmount& old_fee,
-        CAmount& new_fee,
-        CMutableTransaction& mtx) override
-    {
-        return feebumper::CreateTransaction(&m_wallet, txid, coin_control, total_fee, errors, old_fee, new_fee, mtx) ==
-               feebumper::Result::OK;
-    }
-    bool signBumpTransaction(CMutableTransaction& mtx) override { return feebumper::SignTransaction(&m_wallet, mtx); }
-    bool commitBumpTransaction(const uint256& txid,
-        CMutableTransaction&& mtx,
-        std::vector<std::string>& errors,
-        uint256& bumped_txid) override
-    {
-        return feebumper::CommitTransaction(&m_wallet, txid, std::move(mtx), errors, bumped_txid) ==
-               feebumper::Result::OK;
     }
     WalletBalances getBalances() override
     {
@@ -201,14 +176,12 @@ public:
         num_blocks = ::chainActive.Height();
         return true;
     }
-    CAmount getBalance() override { return m_wallet.GetBalance(); }
-    CAmount getAvailableBalance(const CCoinControl& coin_control) override
+    Amount getBalance() override { return m_wallet.GetBalance(); }
+    Amount getAvailableBalance(const CCoinControl& coin_control) override
     {
         return m_wallet.GetAvailableBalance(&coin_control);
     }
     bool hdEnabled() override { return m_wallet.IsHDEnabled(); }
-    OutputType getDefaultAddressType() override { return m_wallet.m_default_address_type; }
-    OutputType getDefaultChangeType() override { return m_wallet.m_default_change_type; }
     std::unique_ptr<Handler> handleShowProgress(ShowProgressFn fn) override
     {
         return MakeHandler(m_wallet.ShowProgress.connect(fn));
@@ -226,7 +199,7 @@ public:
     std::unique_ptr<Handler> handleTransactionChanged(TransactionChangedFn fn) override
     {
         return MakeHandler(m_wallet.NotifyTransactionChanged.connect(
-            [fn, this](CWallet*, const uint256& txid, ChangeType status) { fn(txid, status); }));
+            [fn, this](CWallet*, const TxId &txid, ChangeType status) { fn(txid, status); }));
     }
     std::unique_ptr<Handler> handleWatchOnlyChanged(WatchOnlyChangedFn fn) override
     {
