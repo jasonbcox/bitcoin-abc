@@ -643,7 +643,7 @@ void SendCoinsDialog::useAvailableBalance(SendCoinsEntry *entry) {
     }
 
     // Calculate available amount to send.
-    Amount amount = model->wallet().getAvailableBalance(&coin_control);
+    Amount amount = model->wallet().getAvailableBalance(coin_control);
     for (int i = 0; i < ui->entries->count(); ++i) {
         SendCoinsEntry *e =
             qobject_cast<SendCoinsEntry *>(ui->entries->itemAt(i)->widget());

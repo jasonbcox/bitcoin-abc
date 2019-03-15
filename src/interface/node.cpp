@@ -16,7 +16,7 @@
 #include <net_processing.h>
 #include <netaddress.h>
 #include <netbase.h>
-#include <policy/feerate.h>
+#include <feerate.h>
 #include <policy/fees.h>
 #include <policy/policy.h>
 #include <primitives/block.h>
@@ -197,29 +197,14 @@ class NodeImpl : public Node
         }
     }
     bool getNetworkActive() override { return g_connman && g_connman->GetNetworkActive(); }
-    Amount getRequiredFee(unsigned int tx_bytes) override { CHECK_WALLET(return GetRequiredFee(tx_bytes)); }
     Amount getMinimumFee(unsigned int tx_bytes,
-        const CCoinControl& coin_control,
-        int* returned_target,
-        FeeReason* reason) override
+        const CCoinControl& coin_control) override
     {
-        FeeCalculation fee_calc;
         Amount result;
-        CHECK_WALLET(result = GetMinimumFee(tx_bytes, coin_control, ::mempool, ::feeEstimator, &fee_calc));
-        if (returned_target) *returned_target = fee_calc.returnedTarget;
-        if (reason) *reason = fee_calc.reason;
+        CHECK_WALLET(result = GetMinimumFee(tx_bytes, g_mempool, coin_control));
         return result;
     }
     Amount getMaxTxFee() override { return ::maxTxFee; }
-    CFeeRate estimateSmartFee(int num_blocks, bool conservative, int* returned_target = nullptr) override
-    {
-        FeeCalculation fee_calc;
-        CFeeRate result = ::feeEstimator.estimateSmartFee(num_blocks, &fee_calc, conservative);
-        if (returned_target) {
-            *returned_target = fee_calc.returnedTarget;
-        }
-        return result;
-    }
     CFeeRate getDustRelayFee() override { return ::dustRelayFee; }
     CFeeRate getPayTxFee() override { CHECK_WALLET(return ::payTxFee); }
     UniValue executeRpc(const std::string& command, const UniValue& params, const std::string& uri) override

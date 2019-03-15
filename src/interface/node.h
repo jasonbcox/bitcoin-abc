@@ -19,7 +19,9 @@
 #include <tuple>
 #include <vector>
 
+class CCoinControl;
 class Config;
+class CFeeRate;
 struct CNodeStateStats;
 struct CNodeStats;
 class HTTPRPCRequestProcessor;
@@ -27,16 +29,6 @@ class proxyType;
 class RPCServer;
 class RPCTimerInterface;
 class UniValue;
-=======
-class CCoinControl;
-class CFeeRate;
-class CNodeStats;
-class RPCTimerInterface;
-class UniValue;
-class proxyType;
-enum class FeeReason;
-struct CNodeStateStats;
->>>>>>> 827de03... Remove direct bitcoin calls from qt/coincontroldialog.cpp
 
 namespace interface {
 
@@ -154,20 +146,12 @@ public:
     //! Get network active.
     virtual bool getNetworkActive() = 0;
 
-    //! Get required fee.
-    virtual CAmount getRequiredFee(unsigned int tx_bytes) = 0;
-
     //! Get minimum fee.
-    virtual CAmount getMinimumFee(unsigned int tx_bytes,
-        const CCoinControl& coin_control,
-        int* returned_target,
-        FeeReason* reason) = 0;
+    virtual Amount getMinimumFee(unsigned int tx_bytes,
+        const CCoinControl& coin_control) = 0;
 
     //! Get max tx fee.
     virtual Amount getMaxTxFee() = 0;
-
-    //! Estimate smart fee.
-    virtual CFeeRate estimateSmartFee(int num_blocks, bool conservative, int* returned_target = nullptr) = 0;
 
     //! Get dust relay fee.
     virtual CFeeRate getDustRelayFee() = 0;

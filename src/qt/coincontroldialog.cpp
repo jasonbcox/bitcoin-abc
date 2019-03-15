@@ -543,7 +543,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog *dialog) {
         }
 
         // Fee
-        nPayFee = model->node().getMinimumFee(nBytes, *coinControl(), nullptr /* returned_target */, nullptr /* reason */);
+        nPayFee = model->node().getMinimumFee(nBytes, *coinControl());
 
         if (nPayAmount > Amount::zero()) {
             nChange = nAmount - nPayAmount;
@@ -761,21 +761,21 @@ void CoinControlDialog::updateView() {
             // amount
             itemOutput->setText(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, out.txout.nValue));
             // padding so that sorting works correctly
-            itemOutput->setData(COLUMN_AMOUNT, Qt::UserRole, QVariant((qlonglong)out.txout.nValue));
+            itemOutput->setData(COLUMN_AMOUNT, Qt::UserRole, QVariant(qlonglong(out.txout.nValue / SATOSHI)));
 
             // date
             itemOutput->setText(COLUMN_DATE, GUIUtil::dateTimeStr(out.time));
-            itemOutput->setData(COLUMN_DATE, Qt::UserRole, QVariant((qlonglong)out.time));
+            itemOutput->setData(COLUMN_DATE, Qt::UserRole, QVariant(qlonglong(out.time)));
 
             // confirmations
             itemOutput->setText(COLUMN_CONFIRMATIONS, QString::number(out.depth_in_main_chain));
-            itemOutput->setData(COLUMN_CONFIRMATIONS, Qt::UserRole, QVariant((qlonglong)out.depth_in_main_chain));
+            itemOutput->setData(COLUMN_CONFIRMATIONS, Qt::UserRole, QVariant(qlonglong(out.depth_in_main_chain)));
 
             // transaction hash
-            itemOutput->setText(COLUMN_TXHASH, QString::fromStdString(output.GetId().GetHex()));
+            itemOutput->setText(COLUMN_TXHASH, QString::fromStdString(output.GetTxId().GetHex()));
 
             // vout index
-            itemOutput->setText(COLUMN_VOUT_INDEX, QString::number(output.n));
+            itemOutput->setText(COLUMN_VOUT_INDEX, QString::number(output.GetN()));
 
             // disable locked coins
             if (model->wallet().isLockedCoin(output)) {
